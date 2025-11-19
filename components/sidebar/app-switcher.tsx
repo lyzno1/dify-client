@@ -43,6 +43,7 @@ export function AppSwitcher() {
                             className="cursor-pointer"
                         >
                             {app.name}
+                            {app.isDefault && <span className="ml-2 text-xs text-muted-foreground bg-secondary px-1 rounded">Default</span>}
                             {app.id === currentAppId && <span className="ml-auto">✓</span>}
                         </DropdownMenuItem>
                     ))}

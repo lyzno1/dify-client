@@ -100,16 +100,21 @@ export function SettingsDialog({
                             {apps.map((app) => (
                                 <div key={app.id} className="flex items-center justify-between p-2 border rounded">
                                     <div className="truncate">
-                                        <div className="font-medium">{app.name}</div>
+                                        <div className="font-medium flex items-center gap-2">
+                                            {app.name}
+                                            {app.isDefault && <span className="text-[10px] bg-secondary px-1 rounded">Default</span>}
+                                        </div>
                                         <div className="text-xs text-muted-foreground truncate">{app.baseUrl}</div>
                                     </div>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() => removeApp(app.id)}
-                                    >
-                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                    </Button>
+                                    {!app.isDefault && (
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => removeApp(app.id)}
+                                        >
+                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                    )}
                                 </div>
                             ))}
                             {apps.length === 0 && (

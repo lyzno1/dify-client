@@ -7,6 +7,7 @@ export interface AppConfig {
     apiKey: string;
     baseUrl: string;
     appType: 'chatbot' | 'workflow' | 'completion';
+    isDefault?: boolean;
 }
 
 interface AppState {
@@ -52,21 +53,27 @@ export const useAppStore = create<AppState>()(
         {
             name: 'dify-client-storage',
             onRehydrateStorage: () => (state) => {
-                // Initialize default app if configured and not present
-                const defaultAppName = process.env.NEXT_PUBLIC_DEFAULT_APP_NAME;
-                const defaultAppKey = process.env.NEXT_PUBLIC_DEFAULT_APP_KEY;
-                const defaultAppUrl = process.env.NEXT_PUBLIC_DEFAULT_APP_URL;
+                // This runs after rehydration.
+                // Note: process.env might not be fully available here in some edge cases or if state is null?
+                // Actually onRehydrateStorage returns a function that is called *after* hydration with the state.
 
-                if (defaultAppName && defaultAppKey && state) {
-                    const exists = state.apps.some(app => app.apiKey === defaultAppKey);
-                    if (!exists) {
-                        state.addApp({
-                            id: 'default',
-                            name: defaultAppName,
-                            apiKey: defaultAppKey,
-                            baseUrl: defaultAppUrl || 'https://api.dify.ai/v1',
-                            appType: 'chatbot'
-                        });
+                if (state) {
+                    const defaultAppName = process.env.NEXT_PUBLIC_DEFAULT_APP_NAME;
+                    const defaultAppKey = process.env.NEXT_PUBLIC_DEFAULT_APP_KEY;
+                    const defaultAppUrl = process.env.NEXT_PUBLIC_DEFAULT_APP_URL;
+
+                    if (defaultAppName && defaultAppKey) {
+                        const exists = state.apps.some(app => app.id === 'default' || app.apiKey === defaultAppKey);
+                        if (!exists) {
+                            state.addApp({
+                                id: 'default',
+                                name: defaultAppName,
+                                apiKey: defaultAppKey,
+                                baseUrl: defaultAppUrl || 'https://api.dify.ai/v1',
+                                appType: 'chatbot',
+                                isDefault: true
+                            });
+                        }
                     }
                 }
             }
