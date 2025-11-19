@@ -73,6 +73,12 @@ export function ChatArea() {
 
     const [lastQuery, setLastQuery] = React.useState('');
 
+    const scrollToBottom = () => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+    };
+
     const handleSend = async () => {
         if (!input.trim() || !currentApp || isSending) return;
 
@@ -81,6 +87,9 @@ export function ChatArea() {
         setInput('');
         setIsSending(true);
         setStreamingMessage('');
+
+        // Immediate scroll to bottom
+        setTimeout(scrollToBottom, 0);
 
         abortControllerRef.current = new AbortController();
 
