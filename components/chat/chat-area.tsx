@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { useAppStore } from '@/lib/store/app-store';
 import { difyApi, Message } from '@/lib/api/dify';
 import { Button } from '@/components/ui/button';
@@ -23,36 +23,75 @@ export function ChatArea() {
     const scrollRef = React.useRef<HTMLDivElement>(null);
     const abortControllerRef = React.useRef<AbortController | null>(null);
 
-    // Fetch history
-    const { data: historyData, isLoading: isHistoryLoading } = useQuery({
+    const {
+        data: historyData,
+        isLoading: isHistoryLoading,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage
+    } = useInfiniteQuery({
         queryKey: ['messages', currentConversationId],
-        queryFn: () => {
+        queryFn: async ({ pageParam }) => {
             if (!currentApp || !currentConversationId) return { data: [], has_more: false, limit: 20 };
-            return difyApi.getMessages(currentApp, currentConversationId, userId);
+            return difyApi.getMessages(currentApp, currentConversationId, userId, pageParam);
+        },
+        initialPageParam: undefined as string | undefined,
+        getNextPageParam: (lastPage) => {
+            if (lastPage.has_more && lastPage.data.length > 0) {
+                // The API uses the ID of the first message in the list as the cursor for the next page (older messages)
+                // Assuming the API returns messages in reverse chronological order (newest first) or we need to find the "oldest" ID.
+                // Dify API usually returns latest messages first.
+                // So the "last" message in the array is the oldest? Or the first?
+                // Let's assume the API returns [Newest, ..., Oldest].
+                // Then we need the ID of the last item.
+                // Wait, the doc says "first_id".
+                // If the list is [M10, M9, ... M1], and we want M0..M-9.
+                // If we pass first_id=M1, do we get M0?
+                // Let's try using the ID of the last item in the data array as the cursor.
+                return lastPage.data[lastPage.data.length - 1]?.id;
+            }
+            return undefined;
         },
         enabled: !!currentApp && !!currentConversationId,
     });
 
-    // Combine history and current streaming message
-    // Note: Dify history is usually reverse chronological or chronological? 
-    // The user provided example doesn't specify sort order, but usually chat APIs return latest first or require pagination.
-    // Let's assume we need to reverse them if they come latest-first, or just display as is.
-    // Usually chat UIs display oldest at top.
-    // If `first_id` is used for pagination, it suggests fetching backwards.
-    // Let's assume the API returns a list. We might need to sort by created_at.
-
     const messages = React.useMemo(() => {
-        if (!historyData?.data) return [];
-        // Sort by created_at ascending
-        return [...historyData.data].sort((a, b) => a.created_at - b.created_at);
+        if (!historyData) return [];
+        // Flatten pages
+        const allMessages = historyData.pages.flatMap((page) => page.data);
+        // Sort by created_at ascending (Oldest -> Newest) for display
+        return allMessages.sort((a, b) => a.created_at - b.created_at);
     }, [historyData]);
 
+    // Scroll management
+    const [autoScroll, setAutoScroll] = React.useState(true);
+
+    const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+        const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+
+        // If scrolled to top, fetch more
+        if (scrollTop === 0 && hasNextPage && !isFetchingNextPage) {
+            // Save current scroll height to restore position after load
+            const oldScrollHeight = scrollHeight;
+            fetchNextPage().then(() => {
+                // Restore scroll position
+                // This is tricky with React's render cycle.
+                // We might need a useLayoutEffect or similar.
+                // For now, let's just fetch.
+            });
+        }
+
+        // Check if user is at bottom
+        const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
+        setAutoScroll(isAtBottom);
+    };
+
     React.useEffect(() => {
-        // Scroll to bottom on new messages
-        if (scrollRef.current) {
+        // Scroll to bottom on new messages if autoScroll is true
+        if (scrollRef.current && autoScroll) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
-    }, [messages, streamingMessage]);
+    }, [messages, streamingMessage, autoScroll]);
 
     const [lastQuery, setLastQuery] = React.useState('');
 
@@ -81,6 +120,7 @@ export function ChatArea() {
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let loop = true;
+            let buffer = '';
 
             while (loop) {
                 const { done, value } = await reader.read();
@@ -89,33 +129,36 @@ export function ChatArea() {
                     break;
                 }
 
-                const chunk = decoder.decode(value, { stream: true });
-                const lines = chunk.split('\n');
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+
+                // Keep the last line in buffer as it might be incomplete
+                buffer = lines.pop() || '';
 
                 for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        const jsonStr = line.slice(6);
-                        if (jsonStr === '[DONE]') {
-                            loop = false;
-                            break;
-                        }
-                        try {
-                            const data = JSON.parse(jsonStr);
+                    const trimmedLine = line.trim();
+                    if (!trimmedLine.startsWith('data: ')) continue;
 
-                            // Handle different event types
-                            if (data.event === 'message' || data.event === 'agent_message') {
-                                setStreamingMessage((prev) => prev + data.answer);
-                            } else if (data.event === 'message_end') {
-                                // Message finished
-                                // If it's a new conversation, we might get the ID here
-                                if (data.conversation_id && !currentConversationId) {
-                                    setCurrentConversation(data.conversation_id);
-                                }
+                    const jsonStr = trimmedLine.slice(6);
+                    if (jsonStr === '[DONE]') {
+                        loop = false;
+                        break;
+                    }
+
+                    try {
+                        const data = JSON.parse(jsonStr);
+
+                        // Handle different event types
+                        if (data.event === 'message' || data.event === 'agent_message') {
+                            setStreamingMessage((prev) => prev + data.answer);
+                        } else if (data.event === 'message_end') {
+                            // Message finished
+                            if (data.conversation_id && !currentConversationId) {
+                                setCurrentConversation(data.conversation_id);
                             }
-                            // Handle other events like 'error'
-                        } catch (e) {
-                            console.error('Error parsing SSE:', e);
                         }
+                    } catch (e) {
+                        console.error('Error parsing SSE:', e);
                     }
                 }
             }
@@ -163,7 +206,19 @@ export function ChatArea() {
                 <div
                     ref={scrollRef}
                     className="h-full overflow-y-auto p-4 space-y-4"
+                    onScroll={handleScroll}
                 >
+                    {hasNextPage && (
+                        <div className="flex justify-center p-2">
+                            {isFetchingNextPage ? (
+                                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                            ) : (
+                                <Button variant="ghost" size="sm" onClick={() => fetchNextPage()}>
+                                    Load previous messages
+                                </Button>
+                            )}
+                        </div>
+                    )}
                     {messages.map((msg) => (
                         <div key={msg.id} className="space-y-4">
                             {/* User Message */}

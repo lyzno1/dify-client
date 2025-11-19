@@ -51,6 +51,25 @@ export const useAppStore = create<AppState>()(
         }),
         {
             name: 'dify-client-storage',
+            onRehydrateStorage: () => (state) => {
+                // Initialize default app if configured and not present
+                const defaultAppName = process.env.NEXT_PUBLIC_DEFAULT_APP_NAME;
+                const defaultAppKey = process.env.NEXT_PUBLIC_DEFAULT_APP_KEY;
+                const defaultAppUrl = process.env.NEXT_PUBLIC_DEFAULT_APP_URL;
+
+                if (defaultAppName && defaultAppKey && state) {
+                    const exists = state.apps.some(app => app.apiKey === defaultAppKey);
+                    if (!exists) {
+                        state.addApp({
+                            id: 'default',
+                            name: defaultAppName,
+                            apiKey: defaultAppKey,
+                            baseUrl: defaultAppUrl || 'https://api.dify.ai/v1',
+                            appType: 'chatbot'
+                        });
+                    }
+                }
+            }
         }
     )
 );
