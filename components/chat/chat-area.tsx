@@ -192,91 +192,48 @@ export function ChatArea() {
                     className="h-full overflow-y-auto p-4 md:p-6 space-y-8"
                     onScroll={handleScroll}
                 >
-                    {hasNextPage && (
-                        <div className="flex justify-center py-4">
-                            {isFetchingNextPage ? (
-                                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                            ) : (
-                                <Button variant="ghost" size="sm" onClick={() => fetchNextPage()} className="text-muted-foreground hover:text-foreground">
-                                    Load previous messages
-                                </Button>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Inside ChatArea component */}
-
-                    {messages.map((msg) => (
-                        <div key={msg.id} className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
-                            {/* User Message */}
-                            <div className="flex justify-end gap-3">
-                                <div className="flex flex-col items-end max-w-[80%] md:max-w-[70%]">
-                                    <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-5 py-3 shadow-sm">
-                                        <p className="whitespace-pre-wrap leading-relaxed">{msg.query}</p>
-                                    </div>
-                                </div>
-                                <Avatar className="h-8 w-8 mt-1 border">
-                                    <AvatarFallback className="bg-primary/10 text-primary"><User className="h-4 w-4" /></AvatarFallback>
-                                </Avatar>
+                    <div className="max-w-4xl mx-auto space-y-8">
+                        {hasNextPage && (
+                            <div className="flex justify-center py-4">
+                                {isFetchingNextPage ? (
+                                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                                ) : (
+                                    <Button variant="ghost" size="sm" onClick={() => fetchNextPage()} className="text-muted-foreground hover:text-foreground">
+                                        Load previous messages
+                                    </Button>
+                                )}
                             </div>
+                        )}
 
-                            {/* AI Message */}
-                            <div className="flex justify-start gap-3">
-                                <Avatar className="h-8 w-8 mt-1 border bg-muted/50">
-                                    <AvatarFallback><Bot className="h-4 w-4 text-muted-foreground" /></AvatarFallback>
-                                </Avatar>
-                                <div className="flex flex-col items-start max-w-[85%] md:max-w-[75%] w-full">
-                                    <div className="bg-muted/50 rounded-2xl rounded-tl-sm px-6 py-4 shadow-sm w-full overflow-hidden">
-                                        {parseThinkTags(msg.answer).map((part, index) => (
-                                            part.type === 'think' ? (
-                                                <ThinkBlock
-                                                    key={index}
-                                                    content={part.content}
-                                                    isStreaming={false}
-                                                />
-                                            ) : (
-                                                <Streamdown
-                                                    key={index}
-                                                    className="prose dark:prose-invert max-w-none prose-sm md:prose-base prose-pre:bg-muted/50 prose-pre:border prose-pre:border-border/50"
-                                                >
-                                                    {part.content}
-                                                </Streamdown>
-                                            )
-                                        ))}
+                        {/* Inside ChatArea component */}
+
+                        {messages.map((msg) => (
+                            <div key={msg.id} className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                                {/* User Message */}
+                                <div className="flex justify-end gap-3">
+                                    <div className="flex flex-col items-end max-w-[80%] md:max-w-[70%]">
+                                        <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-5 py-3 shadow-sm">
+                                            <p className="whitespace-pre-wrap leading-relaxed">{msg.query}</p>
+                                        </div>
                                     </div>
+                                    <Avatar className="h-8 w-8 mt-1 border">
+                                        <AvatarFallback className="bg-primary/10 text-primary"><User className="h-4 w-4" /></AvatarFallback>
+                                    </Avatar>
                                 </div>
-                            </div>
-                        </div>
-                    ))}
 
-                    {isSending && (
-                        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
-                            {/* Optimistic User Message */}
-                            <div className="flex justify-end gap-3">
-                                <div className="flex flex-col items-end max-w-[80%] md:max-w-[70%]">
-                                    <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-5 py-3 shadow-sm">
-                                        <p className="whitespace-pre-wrap leading-relaxed">{lastQuery}</p>
-                                    </div>
-                                </div>
-                                <Avatar className="h-8 w-8 mt-1 border">
-                                    <AvatarFallback className="bg-primary/10 text-primary"><User className="h-4 w-4" /></AvatarFallback>
-                                </Avatar>
-                            </div>
-
-                            {/* Streaming AI Message */}
-                            <div className="flex justify-start gap-3">
-                                <Avatar className="h-8 w-8 mt-1 border bg-muted/50">
-                                    <AvatarFallback><Bot className="h-4 w-4 text-muted-foreground" /></AvatarFallback>
-                                </Avatar>
-                                <div className="flex flex-col items-start max-w-[85%] md:max-w-[75%] w-full">
-                                    <div className="bg-muted/50 rounded-2xl rounded-tl-sm px-6 py-4 shadow-sm w-full overflow-hidden min-h-[60px]">
-                                        {streamingMessage ? (
-                                            parseThinkTags(streamingMessage).map((part, index) => (
+                                {/* AI Message */}
+                                <div className="flex justify-start gap-3">
+                                    <Avatar className="h-8 w-8 mt-1 border bg-muted/50">
+                                        <AvatarFallback><Bot className="h-4 w-4 text-muted-foreground" /></AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex flex-col items-start w-full min-w-0">
+                                        <div className="bg-muted/50 rounded-2xl rounded-tl-sm px-6 py-4 shadow-sm w-full overflow-hidden">
+                                            {parseThinkTags(msg.answer).map((part, index) => (
                                                 part.type === 'think' ? (
                                                     <ThinkBlock
                                                         key={index}
                                                         content={part.content}
-                                                        isStreaming={!part.closed}
+                                                        isStreaming={false}
                                                     />
                                                 ) : (
                                                     <Streamdown
@@ -286,23 +243,68 @@ export function ChatArea() {
                                                         {part.content}
                                                     </Streamdown>
                                                 )
-                                            ))
-                                        ) : (
-                                            <div className="flex items-center gap-1 h-6">
-                                                <span className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                                                <span className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                                                <span className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce" />
-                                            </div>
-                                        )}
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        ))}
+
+                        {isSending && (
+                            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                                {/* Optimistic User Message */}
+                                <div className="flex justify-end gap-3">
+                                    <div className="flex flex-col items-end max-w-[80%] md:max-w-[70%]">
+                                        <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-5 py-3 shadow-sm">
+                                            <p className="whitespace-pre-wrap leading-relaxed">{lastQuery}</p>
+                                        </div>
+                                    </div>
+                                    <Avatar className="h-8 w-8 mt-1 border">
+                                        <AvatarFallback className="bg-primary/10 text-primary"><User className="h-4 w-4" /></AvatarFallback>
+                                    </Avatar>
+                                </div>
+
+                                {/* Streaming AI Message */}
+                                <div className="flex justify-start gap-3">
+                                    <Avatar className="h-8 w-8 mt-1 border bg-muted/50">
+                                        <AvatarFallback><Bot className="h-4 w-4 text-muted-foreground" /></AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex flex-col items-start w-full min-w-0">
+                                        <div className="bg-muted/50 rounded-2xl rounded-tl-sm px-6 py-4 shadow-sm w-full overflow-hidden min-h-[60px]">
+                                            {streamingMessage ? (
+                                                parseThinkTags(streamingMessage).map((part, index) => (
+                                                    part.type === 'think' ? (
+                                                        <ThinkBlock
+                                                            key={index}
+                                                            content={part.content}
+                                                            isStreaming={!part.closed}
+                                                        />
+                                                    ) : (
+                                                        <Streamdown
+                                                            key={index}
+                                                            className="prose dark:prose-invert max-w-none prose-sm md:prose-base prose-pre:bg-muted/50 prose-pre:border prose-pre:border-border/50"
+                                                        >
+                                                            {part.content}
+                                                        </Streamdown>
+                                                    )
+                                                ))
+                                            ) : (
+                                                <div className="flex items-center gap-1 h-6">
+                                                    <span className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                                                    <span className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                                                    <span className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce" />
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
-            <div className="p-4 md:p-6 border-t bg-background/80 backdrop-blur-sm">
+            <div className="p-4 md:p-6 bg-background/80 backdrop-blur-sm">
                 <div className="max-w-4xl mx-auto relative">
                     <Textarea
                         value={input}
