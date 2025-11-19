@@ -10,6 +10,8 @@ import { Send, Loader2, StopCircle, User, Bot } from 'lucide-react';
 import { Streamdown } from 'streamdown';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ThinkBlock } from './think-block';
+import { parseThinkTags } from '@/lib/utils/think-parser';
 
 export function ChatArea() {
     const { apps, currentAppId, currentConversationId, setCurrentConversation, userId } = useAppStore();
@@ -193,6 +195,8 @@ export function ChatArea() {
                         </div>
                     )}
 
+                    {/* Inside ChatArea component */}
+
                     {messages.map((msg) => (
                         <div key={msg.id} className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
                             {/* User Message */}
@@ -212,11 +216,24 @@ export function ChatArea() {
                                 <Avatar className="h-8 w-8 mt-1 border bg-muted/50">
                                     <AvatarFallback><Bot className="h-4 w-4 text-muted-foreground" /></AvatarFallback>
                                 </Avatar>
-                                <div className="flex flex-col items-start max-w-[85%] md:max-w-[75%]">
+                                <div className="flex flex-col items-start max-w-[85%] md:max-w-[75%] w-full">
                                     <div className="bg-muted/50 rounded-2xl rounded-tl-sm px-6 py-4 shadow-sm w-full overflow-hidden">
-                                        <Streamdown className="prose dark:prose-invert max-w-none prose-sm md:prose-base prose-pre:bg-muted/50 prose-pre:border prose-pre:border-border/50">
-                                            {msg.answer}
-                                        </Streamdown>
+                                        {parseThinkTags(msg.answer).map((part, index) => (
+                                            part.type === 'think' ? (
+                                                <ThinkBlock
+                                                    key={index}
+                                                    content={part.content}
+                                                    isStreaming={false}
+                                                />
+                                            ) : (
+                                                <Streamdown
+                                                    key={index}
+                                                    className="prose dark:prose-invert max-w-none prose-sm md:prose-base prose-pre:bg-muted/50 prose-pre:border prose-pre:border-border/50"
+                                                >
+                                                    {part.content}
+                                                </Streamdown>
+                                            )
+                                        ))}
                                     </div>
                                 </div>
                             </div>
@@ -242,12 +259,25 @@ export function ChatArea() {
                                 <Avatar className="h-8 w-8 mt-1 border bg-muted/50">
                                     <AvatarFallback><Bot className="h-4 w-4 text-muted-foreground" /></AvatarFallback>
                                 </Avatar>
-                                <div className="flex flex-col items-start max-w-[85%] md:max-w-[75%]">
+                                <div className="flex flex-col items-start max-w-[85%] md:max-w-[75%] w-full">
                                     <div className="bg-muted/50 rounded-2xl rounded-tl-sm px-6 py-4 shadow-sm w-full overflow-hidden min-h-[60px]">
                                         {streamingMessage ? (
-                                            <Streamdown className="prose dark:prose-invert max-w-none prose-sm md:prose-base prose-pre:bg-muted/50 prose-pre:border prose-pre:border-border/50">
-                                                {streamingMessage}
-                                            </Streamdown>
+                                            parseThinkTags(streamingMessage).map((part, index) => (
+                                                part.type === 'think' ? (
+                                                    <ThinkBlock
+                                                        key={index}
+                                                        content={part.content}
+                                                        isStreaming={!part.closed}
+                                                    />
+                                                ) : (
+                                                    <Streamdown
+                                                        key={index}
+                                                        className="prose dark:prose-invert max-w-none prose-sm md:prose-base prose-pre:bg-muted/50 prose-pre:border prose-pre:border-border/50"
+                                                    >
+                                                        {part.content}
+                                                    </Streamdown>
+                                                )
+                                            ))
                                         ) : (
                                             <div className="flex items-center gap-1 h-6">
                                                 <span className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:-0.3s]" />
