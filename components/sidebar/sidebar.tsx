@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator';
 export function Sidebar() {
     return (
         <div className="flex flex-col h-full border-r bg-background">
-            <div className="p-4">
+            <div className="p-3">
                 <AppSwitcher />
             </div>
             <Separator />

@@ -27,28 +27,36 @@ export function AppSwitcher() {
                     <Button
                         variant="outline"
                         role="combobox"
-                        className="w-full justify-between"
+                        className="w-full justify-between h-12 px-3 bg-background/50 backdrop-blur-sm hover:bg-accent/50 transition-colors"
                     >
-                        {currentApp ? currentApp.name : 'Select App'}
+                        <div className="flex items-center gap-2 truncate">
+                            <div className="flex h-6 w-6 items-center justify-center rounded-md border bg-background">
+                                <span className="text-xs font-bold">{currentApp?.name.charAt(0).toUpperCase() || 'A'}</span>
+                            </div>
+                            <span className="truncate font-medium">{currentApp ? currentApp.name : 'Select App'}</span>
+                        </div>
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-[200px] p-0">
-                    <DropdownMenuLabel>Applications</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
+                <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] p-1" align="start">
+                    <DropdownMenuLabel className="text-xs font-medium text-muted-foreground px-2 py-1.5">Applications</DropdownMenuLabel>
                     {apps.map((app) => (
                         <DropdownMenuItem
                             key={app.id}
                             onSelect={() => setCurrentApp(app.id)}
-                            className="cursor-pointer"
+                            className="cursor-pointer flex items-center justify-between px-2 py-2 rounded-sm focus:bg-accent"
                         >
-                            {app.name}
-                            {app.isDefault && <span className="ml-2 text-xs text-muted-foreground bg-secondary px-1 rounded">Default</span>}
-                            {app.id === currentAppId && <span className="ml-auto">✓</span>}
+                            <div className="flex items-center gap-2 truncate">
+                                <div className="flex h-5 w-5 items-center justify-center rounded border bg-background/50">
+                                    <span className="text-[10px] font-bold">{app.name.charAt(0).toUpperCase()}</span>
+                                </div>
+                                <span className="truncate">{app.name}</span>
+                            </div>
+                            {app.id === currentAppId && <span className="text-primary text-xs">Active</span>}
                         </DropdownMenuItem>
                     ))}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onSelect={() => setIsSettingsOpen(true)} className="cursor-pointer">
+                    <DropdownMenuSeparator className="my-1" />
+                    <DropdownMenuItem onSelect={() => setIsSettingsOpen(true)} className="cursor-pointer px-2 py-2 text-muted-foreground focus:text-foreground">
                         <Settings className="mr-2 h-4 w-4" />
                         Manage Apps
                     </DropdownMenuItem>

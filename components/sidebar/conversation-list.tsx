@@ -62,10 +62,10 @@ export function ConversationList() {
 
     return (
         <div className="flex flex-col h-full">
-            <div className="p-2">
+            <div className="p-3 pt-3">
                 <Button
-                    className="w-full justify-start"
-                    variant="secondary"
+                    className="w-full justify-start h-10 px-3 shadow-none border-dashed border bg-background hover:bg-accent hover:text-accent-foreground transition-colors"
+                    variant="outline"
                     onClick={() => setCurrentConversation(null)}
                 >
                     <Plus className="mr-2 h-4 w-4" />
